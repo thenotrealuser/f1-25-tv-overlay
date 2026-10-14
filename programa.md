@@ -40,6 +40,13 @@ Projeto ativo: esta pasta (v6). As versões anteriores em `f1-overlay (1)` e `fl
 
 ## Estado da verificação e próximos cuidados
 
+### Publicação no GitHub
+
+- O repositório `thenotrealuser/f1-25-tv-overlay` recebeu `README.md` detalhado e ilustrado, licença MIT e indicação explícita de que o software é gratuito para qualquer pessoa usar. O README distingue prints de referência de capturas do overlay em execução.
+- `docs/referencias/` contém as imagens fornecidas pelo usuário para orientar o visual; elas são material de terceiros e ficam fora da licença MIT do código.
+- `.gitignore` exclui backups, dumps de telemetria, ZIP, layouts e escalas pessoais, perfis de curvas aprendidos e dependências instaladas.
+
+
 - A leitura anterior dos dumps reais comprova apenas as situações capturadas naquela Q1; esses dumps não incluem uma corrida real em SC/VSC, bandeira vermelha ou FTLP. As HUDs novas ainda exigem captura visual e UDP durante esses eventos para conferir transições e semelhança com a transmissão. A janela Electron e o encaixe por carro também precisam de conferência no F1 25.
 - Para verificar SC sem delta, capture pacotes de sessão (id 1), volta (id 2) e evento (id 3) durante entrada, circulação e saída do SC. Se o jogo mantiver valores não zero mesmo quando o delta não for exigido, refine a regra de disponibilidade com evidência real.
 - A especificação usada é a de estruturas UDP do 2026 Season Pack publicada pela EA: `https://forums.ea.com/t5/s/tghpe58374/attachments/tghpe58374/f1-games-game-info-hub-en/61/8/2026%20Season%20Pack%20Telemetry%20Output%20Structures%20(1).txt`. A interpretação de delta positivo/negativo segue a explicação da FIA: `https://www.fia.com/news/fia-insights-developing-new-delta-for-double-yellow-flag-zones`.

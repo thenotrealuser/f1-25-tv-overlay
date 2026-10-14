@@ -1,5 +1,7 @@
 # F1 25 TV Overlay — 2026 Season Pack
 
+**Guia detalhado e ilustrado:** [`README.md`](README.md). O código é gratuito para qualquer pessoa usar sob a [licença MIT](LICENSE); as imagens de referência não fazem parte dessa licença.
+
 HUD estilo transmissão de TV para o F1 25. Lê a telemetria UDP oficial do jogo e desenha por cima da tela. Não altera arquivos nem memória do jogo.
 
 ## Começar
@@ -23,7 +25,7 @@ Com a janela Electron aberta, os atalhos globais funcionam mesmo com o jogo em f
 | Ctrl+Alt+F | Avisos na torre (amarela, SC, VSC, vermelha) e delta SC/VSC |
 | Ctrl+Alt+V | Anúncio de volta mais rápida |
 | Ctrl+Alt+L | Cartão da volta do jogador (visível somente em corrida) |
-| Ctrl+Alt+O | Cartão onboard e halo |
+| Ctrl+Alt+O | Cartão onboard |
 | Ctrl+Alt+G | Somente o halo |
 | Ctrl+Alt+K | Cartões de volta lançada (qualificação) |
 | Ctrl+Alt+E ou Ctrl+Shift+E | Modo de edição (mover/redimensionar HUDs) |
