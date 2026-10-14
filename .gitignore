@@ -1,0 +1,16 @@
+# Artefatos locais e dados do jogador
+/backup-before-*/
+/f1-overlay-2026.zip
+/dump/
+/curvas/*.json
+/hud-offsets.json
+/hud-scales.json
+/halo-layouts.json
+/halo-layouts-before-redesign.json
+
+# Dependências e arquivos temporários
+/node_modules/
+/janela/node_modules/
+*.log
+.DS_Store
+Thumbs.db

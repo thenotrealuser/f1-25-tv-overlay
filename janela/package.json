@@ -1,0 +1,10 @@
+{
+  "name": "f1-overlay-janela",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Janela transparente que mostra o overlay por cima do jogo",
+  "main": "main.js",
+  "devDependencies": {
+    "electron": ">=33.0.0"
+  }
+}

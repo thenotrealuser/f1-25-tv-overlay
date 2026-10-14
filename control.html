@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Controle do F1 Overlay</title>
+<style>
+body{font:18px system-ui,sans-serif;background:#16161d;color:#f6f6f7;max-width:620px;margin:35px auto;padding:0 18px}
+h1{font-size:1.5rem}button{background:#e10600;color:white;border:0;border-radius:6px;padding:14px 18px;margin:6px;cursor:pointer;font:inherit}
+button:hover{background:#ad0804}button.off{background:#3a3b44}button.on{background:#1f8f4e}#modes button.cur{background:#1f8f4e}#status{color:#ddd;padding:12px}small{color:#aaa}
+fieldset{border:1px solid #45464d;border-radius:8px;margin-top:20px;padding:15px}legend{padding:0 8px;font-weight:700}
+label{display:flex;align-items:center;gap:12px;margin:10px 0}label span{width:110px}input[type=range]{flex:1}output{width:48px;text-align:right}
+select{font:inherit;background:#24252c;color:white;border:1px solid #555;padding:7px;border-radius:4px}
+</style></head><body>
+<h1>Controle do F1 Overlay</h1>
+<fieldset><legend>HUDs (ligar / desligar cada uma)</legend>
+<div id="toggles">
+  <button data-toggle="all" data-label="HUD inteiro">HUD inteiro</button>
+  <button data-toggle="tower" data-label="Torre de tempos">Torre de tempos</button>
+  <button data-toggle="cards" data-label="Cartões de volta (3 pilotos, qualy)">Cartões de volta (3 pilotos, qualy)</button>
+  <button data-toggle="halo" data-label="Halo (instrumentos)">Halo (instrumentos)</button>
+  <button data-toggle="onboard" data-label="Cartão onboard (nome do piloto)">Cartão onboard (nome do piloto)</button>
+  <button data-toggle="flags" data-label="Avisos na torre e delta (SC, VSC, bandeiras)">Avisos na torre e delta (SC, VSC, bandeiras)</button>
+  <button data-toggle="fastest" data-label="Volta mais rápida">Volta mais rápida</button>
+  <button data-toggle="lap" data-label="Cartão da volta (somente corrida)">Cartão da volta (somente corrida)</button>
+</div>
+<small>● ligada · ○ desligada. Atalhos: Ctrl+Alt+H (tudo), T, K, G, O, F, V, L.</small>
+</fieldset>
+<fieldset><legend>Modo e edição</legend>
+<div id="modes"><button data-mode="auto">Automático</button><button data-mode="quali">Qualificação</button><button data-mode="race">Corrida</button></div>
+<div><button data-toggle="edit" id="editBtn" style="background:#b8860b">Modo edição: mover e redimensionar as HUDs na tela</button></div>
+<small>Pause o jogo pelo menu dele, entre no modo de edição, arraste as HUDs e saia com Esc (ou pelo mesmo botão).</small>
+</fieldset>
+<fieldset><legend>Ajuste do halo</legend>
+  <label>Perfil <select id="profile"><option value="current">Equipe do carro atual</option><option value="default">Padrão</option></select></label>
+  <label><span>Horizontal</span><input id="haloX" type="range" min="10" max="90" step="0.5"><output id="xValue"></output></label>
+  <label><span>Vertical</span><input id="haloY" type="range" min="10" max="85" step="0.5"><output id="yValue"></output></label>
+  <label><span>Tamanho da equipe</span><input id="haloScale" type="range" min="0.5" max="2" step="0.05"><output id="scaleValue"></output></label>
+  <small>Abra o jogo ou a demo, ative o halo e ajuste aqui. A posição e este tamanho ficam salvos por equipe.</small>
+</fieldset>
+<fieldset><legend>Tamanho de cada HUD</legend>
+  <label><span>Torre</span><input id="sizeTower" type="range" min="0.3" max="3" step="0.05"><output id="sizeTowerValue"></output></label>
+  <label><span>Cartão onboard</span><input id="sizeOnboard" type="range" min="0.3" max="3" step="0.05"><output id="sizeOnboardValue"></output></label>
+  <label><span>Halo geral</span><input id="sizeHalo" type="range" min="0.3" max="3" step="0.05"><output id="sizeHaloValue"></output></label>
+  <label><span>Avisos de pista</span><input id="sizeFlags" type="range" min="0.3" max="3" step="0.05"><output id="sizeFlagsValue"></output></label>
+  <label><span>Volta rápida</span><input id="sizeFastest" type="range" min="0.3" max="3" step="0.05"><output id="sizeFastestValue"></output></label>
+  <label><span>Cartões qualy</span><input id="sizeCards" type="range" min="0.3" max="3" step="0.05"><output id="sizeCardsValue"></output></label>
+  <label><span>Cartão da volta</span><input id="sizeLap" type="range" min="0.3" max="3" step="0.05"><output id="sizeLapValue"></output></label>
+  <small>Os tamanhos gerais valem para qualquer resolução e ficam salvos. O tamanho geral do halo multiplica o tamanho definido para a equipe acima. 1× é o tamanho original.</small>
+</fieldset>
+<p id="status">Conectando...</p><small>Deixe esta página aberta no navegador. Os botões também funcionam enquanto a janela do jogo está em foco.</small>
+<script>
+document.addEventListener('click', async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  try { await fetch('/api/ui', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(b.dataset.toggle ? { toggle: b.dataset.toggle } : { mode: b.dataset.mode }) }); }
+  catch (_) { document.getElementById('status').textContent = 'Servidor offline'; }
+});
+const events = new EventSource('/events');
+let latestState = null, loadedProfile = '';
+const sliderIds = ['haloX', 'haloY', 'haloScale'];
+const scaleControls = { tower: 'sizeTower', onboard: 'sizeOnboard', halo: 'sizeHalo', flags: 'sizeFlags', fastest: 'sizeFastest', lap: 'sizeLap', cards: 'sizeCards' };
+const scalePending = new Set();
+function profileKey() { return document.getElementById('profile').value === 'default' ? 'default'
+  : String(latestState?.cars[latestState.viewCar ?? latestState.player]?.team ?? 'default').replace(/^255$/, 'default'); }
+function showValues() {
+  for (const [slider, output, suffix] of [['haloX', 'xValue', '%'], ['haloY', 'yValue', '%'], ['haloScale', 'scaleValue', '×']])
+    document.getElementById(output).textContent = document.getElementById(slider).value + suffix;
+  for (const id of Object.values(scaleControls))
+    document.getElementById(id + 'Value').textContent = Number(document.getElementById(id).value).toFixed(2) + '×';
+}
+function loadScales() {
+  if (!latestState?.hudScales) return;
+  for (const [component, id] of Object.entries(scaleControls)) {
+    if (!scalePending.has(component)) document.getElementById(id).value = latestState.hudScales[component] ?? 1;
+  }
+  showValues();
+}
+function loadProfile() {
+  if (!latestState) return;
+  const key = profileKey();
+  if (key === loadedProfile) return;
+  const p = latestState.haloLayouts[key] || latestState.haloLayouts.default;
+  document.getElementById('haloX').value = p.x;
+  document.getElementById('haloY').value = p.y;
+  document.getElementById('haloScale').value = p.scale;
+  loadedProfile = key;
+  showValues();
+}
+document.getElementById('profile').addEventListener('change', () => { loadedProfile = ''; loadProfile(); });
+let saveTimer;
+function saveLayout() {
+  if (!latestState) return;
+  fetch('/api/halo-layout', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ team: document.getElementById('profile').value, x: Number(document.getElementById('haloX').value),
+      y: Number(document.getElementById('haloY').value), scale: Number(document.getElementById('haloScale').value) })
+  }).catch(() => document.getElementById('status').textContent = 'Erro ao salvar ajuste');
+}
+for (const id of sliderIds) document.getElementById(id).addEventListener('input', () => {
+  showValues(); clearTimeout(saveTimer); saveTimer = setTimeout(saveLayout, 150);
+});
+const scaleTimers = {};
+for (const [component, id] of Object.entries(scaleControls)) {
+  document.getElementById(id).addEventListener('input', () => {
+    scalePending.add(component);
+    showValues();
+    clearTimeout(scaleTimers[component]);
+    scaleTimers[component] = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/scale', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ component, scale: Number(document.getElementById(id).value) }) });
+        if (!res.ok) throw new Error('scale');
+      } catch (_) { document.getElementById('status').textContent = 'Erro ao salvar tamanho'; }
+      finally { scalePending.delete(component); }
+    }, 150);
+  });
+}
+events.onmessage = e => { const s = JSON.parse(e.data), u = s.ui;
+  latestState = s; loadProfile(); loadScales();
+  document.getElementById('status').textContent = s.connected ? 'Jogo conectado' : s.paused ? 'Jogo em pausa (dados congelados)' : 'Sem dados do jogo (inicie uma sessão com a telemetria UDP ligada)';
+  for (const btn of document.querySelectorAll('#toggles button')) {
+    const on = !!u[btn.dataset.toggle];
+    btn.textContent = (on ? '● ' : '○ ') + btn.dataset.label; btn.classList.toggle('on', on); btn.classList.toggle('off', !on);
+  }
+  for (const btn of document.querySelectorAll('#modes button')) btn.classList.toggle('cur', btn.dataset.mode === u.mode);
+  document.getElementById('editBtn').textContent = u.edit ? 'SAIR do modo edição' : 'Modo edição: mover e redimensionar as HUDs na tela';
+};
+events.onerror = () => document.getElementById('status').textContent = 'Servidor offline';
+</script></body></html>
